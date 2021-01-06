@@ -4,47 +4,38 @@ Class {
 	#instVars : [
 		'projects',
 		'packages',
-		'classes'
+		'classes',
+		'categories',
+		'methods'
 	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
 
 { #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializeListNamed: string in: box [
+
+	| newList |
+	box
+		add: (SpkBoxLayout newVertical
+				 add: string
+				 withConstraints: [ :constraints | 
+					 constraints height: self labelHeight ];
+				 add: (newList := self newList);
+				 yourself)
+		withConstraints: [ :constraints | constraints width: 150].
+	^ newList
+]
+
+{ #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeListPresenters [
 
-	projects := self newList.
-	self layout add: (SpkBoxLayout newVertical
-			 color: Color purple lighter;
-			 add: 'Projects'
-			 withConstraints: [ :constraints | 
-				 constraints height: self labelHeight ];
-			 add: projects;
-			 yourself).
-
-	self layout add: (SpBoxLayout newVertical
-			 add: 'Packages'
-			 withConstraints: [ :constraints | 
-				 constraints height: self labelHeight ];
-			 add: (packages := self newList);
-			 yourself).
-	self layout add: (SpBoxLayout newVertical
-			 add: 'Classes'
-			 withConstraints: [ :constraints | 
-				 constraints height: self labelHeight ];
-			 add: (classes := self newList);
-			 yourself).
-	self layout add: (SpBoxLayout newVertical
-			 add: 'Categories'
-			 withConstraints: [ :constraints | 
-				 constraints height: self labelHeight ];
-			 add: (classes := self newList);
-			 yourself).
-	self layout add: (SpBoxLayout newVertical
-			 add: 'Methods'
-			 withConstraints: [ :constraints | 
-				 constraints height: self labelHeight ];
-			 add: (classes := self newList);
-			 yourself)
+	| box |
+	self layout add: (box := SpkBoxLayout newHorizontal).
+	projects := self initializeListNamed: 'Projects' in: box.
+	packages := self initializeListNamed: 'Packages' in: box.
+	classes := self initializeListNamed: 'Classes' in: box.
+	categories := self initializeListNamed: 'Categories' in: box.
+	methods := self initializeListNamed: 'Methods' in: box
 ]
 
 { #category : 'initialization' }
@@ -52,6 +43,13 @@ SparklePlayBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
 	self initializeListPresenters.
+	self initializeSourcePresenter
+]
+
+{ #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializeSourcePresenter [
+
+	self layout add: self newCode 
 ]
 
 { #category : 'initialization' }
@@ -59,8 +57,9 @@ SparklePlayBrowserPresenter >> initializeWindow: aWindowPresenter [
 
 	aWindowPresenter
 		title: 'Sparkle Browser';
-		initialExtent: 600 @ 400
-	
+		borderColor: Color purple;
+		borderWidth: 3;
+		initialExtent: 750 @ 600
 ]
 
 { #category : 'constants' }
@@ -72,5 +71,5 @@ SparklePlayBrowserPresenter >> labelHeight [
 { #category : 'accessing' }
 SparklePlayBrowserPresenter >> newLayout [
 
-	^ SpkBoxLayout newHorizontal
+	^ SpkBoxLayout newVertical
 ]
