@@ -1,3 +1,7 @@
+"
+return some basic git information
+
+"
 Class {
 	#name : 'SpkGitService',
 	#superclass : 'RsrService',

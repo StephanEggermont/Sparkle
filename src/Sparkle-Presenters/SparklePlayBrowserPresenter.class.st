@@ -49,7 +49,7 @@ SparklePlayBrowserPresenter >> initializePresenters [
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeSourcePresenter [
 
-	self layout add: self newCode 
+	self layout add: self newCode
 ]
 
 { #category : 'initialization' }
