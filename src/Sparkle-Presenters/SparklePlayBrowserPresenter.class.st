@@ -6,10 +6,20 @@ Class {
 		'packages',
 		'classes',
 		'categories',
-		'methods'
+		'methods',
+		'connection',
+		'service'
 	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
+
+{ #category : 'initialization' }
+SparklePlayBrowserPresenter >> initialize [
+	super initialize.
+	service := SpkRowanServiceClient new registerWith:
+		           SpkLauncherPresenter connection.
+	self initializeProjects 
+]
 
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeListNamed: string in: box [
@@ -43,7 +53,19 @@ SparklePlayBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
 	self initializeListPresenters.
-	self initializeSourcePresenter
+	self initializeSourcePresenter.
+	
+]
+
+{ #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializeProjects [
+
+	| sparkleProjects |
+	sparkleProjects := service
+		remotePerformOn: 'RowanBrowserService'
+		selector: #updateProjects
+		arguments: #(  ).
+
 ]
 
 { #category : 'initialization' }
