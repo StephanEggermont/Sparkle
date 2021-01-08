@@ -14,6 +14,14 @@ Class {
 }
 
 { #category : 'initialization' }
+SparklePlayBrowserPresenter >> connectPresenters [
+
+	projects whenSelectionChangedDo: [ :selection | 
+		selection selectedItem ifNotNil: [ :sparkleService | 
+			self initializePackagesInProject: sparkleService ] ]
+]
+
+{ #category : 'initialization' }
 SparklePlayBrowserPresenter >> initialize [
 	super initialize.
 	service := SpkRowanServiceClient new registerWith:
@@ -49,6 +57,25 @@ SparklePlayBrowserPresenter >> initializeListPresenters [
 ]
 
 { #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializePackagesInProject: projectSparkleService [
+
+	| sparkleServices projectServices packageNames |
+	sparkleServices := service
+		                   remotePerformOnService: projectSparkleService
+		                   selector: #update
+		                   arguments: #().
+	projectServices := sparkleServices select: [ :sparkleService | 
+		                   sparkleService rowanServiceClassName
+		                   = #RowanPackageService ].
+	packageNames := projectServices collect: [ :sparkleService | 
+		                sparkleService blobPropertyNamed: #name ].
+	packages
+		items: packageNames;
+		sortingBlock: [ :a :b | a < b ];
+		beMultipleSelection
+]
+
+{ #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
@@ -60,7 +87,7 @@ SparklePlayBrowserPresenter >> initializePresenters [
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeProjects [
 
-	| sparkleServices projectServices projectNames |
+	| sparkleServices projectServices |
 	sparkleServices := service
 		                   remotePerformOn: 'RowanBrowserService'
 		                   selector: #updateProjects
@@ -68,12 +95,12 @@ SparklePlayBrowserPresenter >> initializeProjects [
 	projectServices := sparkleServices select: [ :sparkleService | 
 		                   sparkleService rowanServiceClassName
 		                   = #RowanProjectService ].
-	projectNames := projectServices collect: [ :sparkleService | 
-		                sparkleService blobPropertyNamed: #name ].
 	projects
-		items: projectNames;
-		sortingBlock: [ :a :b | a < b ];
-		beMultipleSelection
+		items: projectServices;
+		display: [ :sparkleService | 
+			sparkleService blobPropertyNamed: #name ];
+		sortingBlock: [ :a :b | 
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
 ]
 
 { #category : 'initialization' }

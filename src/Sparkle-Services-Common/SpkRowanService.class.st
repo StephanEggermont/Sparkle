@@ -27,6 +27,12 @@ SpkRowanService >> blob: anObject [
 ]
 
 { #category : 'accessing' }
+SpkRowanService >> blobPropertyNamed: symbol [
+
+	^ (blob at: symbol) value
+]
+
+{ #category : 'accessing' }
 SpkRowanService >> rowanServiceClassName [
 
 	^ rowanServiceClassName

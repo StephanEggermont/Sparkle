@@ -4,12 +4,6 @@ Class {
 	#category : 'Sparkle-Services-Common'
 }
 
-{ #category : 'accessing' }
-SpkRowanServiceClient >> blobPropertyNamed: symbol [
-
-	^ (blob at: symbol) value
-]
-
 { #category : 'remote' }
 SpkRowanServiceClient >> remotePerformOn: classString selector: aSelectorSymbol arguments: anArray [
 
@@ -18,4 +12,15 @@ SpkRowanServiceClient >> remotePerformOn: classString selector: aSelectorSymbol 
 		 selector: aSelectorSymbol
 		 arguments: anArray
 		 meta: false) wait
+]
+
+{ #category : 'remote' }
+SpkRowanServiceClient >> remotePerformOn: classString service: sparkleService selector: aSelectorSymbol arguments: anArray [
+
+	^ (remoteSelf
+		   remotePerformOn: classString
+		   service: sparkleService
+		   selector: aSelectorSymbol
+		   arguments: anArray
+		   meta: false) wait
 ]
