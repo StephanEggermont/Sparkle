@@ -59,20 +59,21 @@ SparklePlayBrowserPresenter >> initializeListPresenters [
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializePackagesInProject: projectSparkleService [
 
-	| sparkleServices projectServices packageNames |
+	| sparkleServices projectService packageServices |
 	sparkleServices := service
 		                   remotePerformOnService: projectSparkleService
 		                   selector: #update
-		                   arguments: #().
-	projectServices := sparkleServices select: [ :sparkleService | 
+		                   arguments: #(  ).
+	projectService := sparkleServices detect: [ :sparkleService | 
 		                   sparkleService rowanServiceClassName
-		                   = #RowanPackageService ].
-	packageNames := projectServices collect: [ :sparkleService | 
-		                sparkleService blobPropertyNamed: #name ].
+		                   = #RowanProjectService ].
+	packageServices := projectService blobPropertyNamed: #packages. 
 	packages
-		items: packageNames;
-		sortingBlock: [ :a :b | a < b ];
-		beMultipleSelection
+		items: packageServices;
+		display: [ :sparkleService | 
+			sparkleService blobPropertyNamed: #name ];
+		sortingBlock: [ :a :b | 
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
 ]
 
 { #category : 'initialization' }

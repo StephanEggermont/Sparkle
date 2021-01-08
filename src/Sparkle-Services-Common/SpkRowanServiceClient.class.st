@@ -15,12 +15,10 @@ SpkRowanServiceClient >> remotePerformOn: classString selector: aSelectorSymbol 
 ]
 
 { #category : 'remote' }
-SpkRowanServiceClient >> remotePerformOn: classString service: sparkleService selector: aSelectorSymbol arguments: anArray [
+SpkRowanServiceClient >> remotePerformOnService: sparkleService selector: aSelectorSymbol arguments: anArray [
 
 	^ (remoteSelf
-		   remotePerformOn: classString
-		   service: sparkleService
+		   remotePerformOnService: sparkleService
 		   selector: aSelectorSymbol
-		   arguments: anArray
-		   meta: false) wait
+		   arguments: anArray) wait
 ]
