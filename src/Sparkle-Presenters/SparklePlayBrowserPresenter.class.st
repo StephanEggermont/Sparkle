@@ -60,13 +60,20 @@ SparklePlayBrowserPresenter >> initializePresenters [
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeProjects [
 
-	| sparkleServices projectServices |
+	| sparkleServices projectServices projectNames |
 	sparkleServices := service
-		remotePerformOn: 'RowanBrowserService'
-		selector: #updateProjects
-		arguments: #(  ). 
-	projectServices := sparkleServices select:[:sparkleService | sparkleService rowanServiceClassName = #'RowanProjectService'].
-	
+		                   remotePerformOn: 'RowanBrowserService'
+		                   selector: #updateProjects
+		                   arguments: #(  ).
+	projectServices := sparkleServices select: [ :sparkleService | 
+		                   sparkleService rowanServiceClassName
+		                   = #RowanProjectService ].
+	projectNames := projectServices collect: [ :sparkleService | 
+		                sparkleService blobPropertyNamed: #name ].
+	projects
+		items: projectNames;
+		sortingBlock: [ :a :b | a < b ];
+		beMultipleSelection
 ]
 
 { #category : 'initialization' }
