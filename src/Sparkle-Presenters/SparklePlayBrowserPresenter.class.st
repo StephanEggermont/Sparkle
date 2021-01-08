@@ -65,7 +65,7 @@ SparklePlayBrowserPresenter >> initializeProjects [
 		remotePerformOn: 'RowanBrowserService'
 		selector: #updateProjects
 		arguments: #(  ).
-
+	self halt. 
 ]
 
 { #category : 'initialization' }
