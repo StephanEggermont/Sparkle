@@ -1,6 +1,10 @@
 Class {
 	#name : 'SpkRowanService',
 	#superclass : 'RsrService',
+	#instVars : [
+		'rowanServiceClassName',
+		'data'
+	],
 	#category : 'Sparkle-Services-Common'
 }
 
@@ -8,6 +12,18 @@ Class {
 SpkRowanService class >> templateClassName [
 
 	^ #SpkRowanService
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> data [
+
+	^ data
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> data: anObject [
+
+	data := anObject
 ]
 
 { #category : 'command execution' }
@@ -22,4 +38,16 @@ SpkRowanService >> remotePerformOn: classString selector: selector arguments: an
 	commandResultClass := (GsSession currentSession
 		resolveSymbol: #'RowanCommandResult') value.
 	^ commandResultClass results collect: [ :service | service makeSparkle ]
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> rowanServiceClassName [
+
+	^ rowanServiceClassName
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> rowanServiceClassName: anObject [
+
+	rowanServiceClassName := anObject
 ]
