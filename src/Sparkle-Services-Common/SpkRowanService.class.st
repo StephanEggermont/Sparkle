@@ -26,18 +26,6 @@ SpkRowanService >> blob: anObject [
 	blob := anObject
 ]
 
-{ #category : 'accessing' }
-SpkRowanService >> data [
-
-	^ data
-]
-
-{ #category : 'accessing' }
-SpkRowanService >> data: anObject [
-
-	data := anObject
-]
-
 { #category : 'command execution' }
 SpkRowanService >> remotePerformOn: classString selector: selector arguments: anArray meta: meta [
 	| theClass commandResultClass |
