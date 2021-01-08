@@ -7,7 +7,7 @@ Class {
 { #category : 'remote' }
 SpkRowanServiceClient >> remotePerformOn: classString selector: aSelectorSymbol arguments: anArray [
 
-	(remoteSelf
+	^(remoteSelf
 		 remotePerformOn: classString
 		 selector: aSelectorSymbol
 		 arguments: anArray
