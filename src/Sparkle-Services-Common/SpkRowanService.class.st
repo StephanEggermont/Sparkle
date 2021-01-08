@@ -3,7 +3,7 @@ Class {
 	#superclass : 'RsrService',
 	#instVars : [
 		'rowanServiceClassName',
-		'data'
+		'blob'
 	],
 	#category : 'Sparkle-Services-Common'
 }
@@ -12,6 +12,18 @@ Class {
 SpkRowanService class >> templateClassName [
 
 	^ #SpkRowanService
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> blob [
+
+	^ blob
+]
+
+{ #category : 'accessing' }
+SpkRowanService >> blob: anObject [
+
+	blob := anObject
 ]
 
 { #category : 'accessing' }

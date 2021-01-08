@@ -60,12 +60,13 @@ SparklePlayBrowserPresenter >> initializePresenters [
 { #category : 'initialization' }
 SparklePlayBrowserPresenter >> initializeProjects [
 
-	| sparkleProjects |
-	sparkleProjects := service
+	| sparkleServices projectServices |
+	sparkleServices := service
 		remotePerformOn: 'RowanBrowserService'
 		selector: #updateProjects
-		arguments: #(  ).
-	self halt. 
+		arguments: #(  ). 
+	projectServices := sparkleServices select:[:sparkleService | sparkleService rowanServiceClassName = #'RowanProjectService'].
+	
 ]
 
 { #category : 'initialization' }
