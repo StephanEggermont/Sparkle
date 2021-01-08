@@ -8,8 +8,7 @@ Class {
 SpkRowanServiceServer >> remotePerformOn: classString selector: selector arguments: anArray meta: meta [
 
 	| commandResultClass sparkleServices rowanServiceClass rowanService |
-	rowanServiceClass := GsSession currentSession resolveSymbol:
-		                     #RowanService.
+	rowanServiceClass := self rowanServiceClass.
 	rowanService := rowanServiceClass
 		                instantiateFromClassName: classString
 		                meta: meta.
@@ -27,8 +26,7 @@ SpkRowanServiceServer >> remotePerformOn: classString selector: selector argumen
 SpkRowanServiceServer >> remotePerformOnService: sparkleService selector: selector arguments: anArray [
 
 	| commandResultClass sparkleServices rowanService rowanServiceClass |
-	rowanServiceClass := GsSession currentSession resolveSymbol:
-		                     #RowanService.
+	rowanServiceClass := self rowanServiceClass.
 	rowanService := rowanServiceClass instantiateFrom: sparkleService.
 
 	commandResultClass := (GsSession currentSession resolveSymbol:
@@ -39,4 +37,10 @@ SpkRowanServiceServer >> remotePerformOnService: sparkleService selector: select
 	sparkleServices := commandResultClass results collect: [ :service | 
 		                   service makeSparkle ].
 	^ sparkleServices
+]
+
+{ #category : 'command execution' }
+SpkRowanServiceServer >> rowanServiceClass [
+
+	^ (GsSession currentSession resolveSymbol: #RowanService) value
 ]
