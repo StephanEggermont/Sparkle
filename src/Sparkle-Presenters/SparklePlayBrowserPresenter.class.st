@@ -40,7 +40,7 @@ SparklePlayBrowserPresenter >> initializeListNamed: string in: box [
 					 constraints height: self labelHeight ];
 				 add: (newList := self newList);
 				 yourself)
-		withConstraints: [ :constraints | constraints width: 150].
+		withConstraints: [ :constraints | constraints width: 200].
 	^ newList
 ]
 
@@ -51,7 +51,11 @@ SparklePlayBrowserPresenter >> initializeListPresenters [
 	self layout add: (box := SpkBoxLayout newHorizontal).
 	projects := self initializeListNamed: 'Projects' in: box.
 	packages := self initializeListNamed: 'Packages' in: box.
+	packages display: [ :sparkleService | 
+		sparkleService blobPropertyNamed: #name ].
 	classes := self initializeListNamed: 'Classes' in: box.
+	classes display: [ :sparkleService | 
+		sparkleService blobPropertyNamed: #name ].
 	categories := self initializeListNamed: 'Categories' in: box.
 	methods := self initializeListNamed: 'Methods' in: box
 ]
@@ -70,8 +74,6 @@ SparklePlayBrowserPresenter >> initializePackagesInProject: projectSparkleServic
 	packageServices := projectService blobPropertyNamed: #packages. 
 	packages
 		items: packageServices;
-		display: [ :sparkleService | 
-			sparkleService blobPropertyNamed: #name ];
 		sortingBlock: [ :a :b | 
 			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
 ]
@@ -117,7 +119,7 @@ SparklePlayBrowserPresenter >> initializeWindow: aWindowPresenter [
 		title: 'Sparkle Browser';
 		borderColor: Color purple;
 		borderWidth: 3;
-		initialExtent: 750 @ 600
+		initialExtent: 1000 @ 600
 ]
 
 { #category : 'constants' }
