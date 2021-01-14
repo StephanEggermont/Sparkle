@@ -18,7 +18,13 @@ SparklePlayBrowserPresenter >> connectPresenters [
 
 	projects whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
-			self initializePackagesInProject: sparkleService ] ]
+			self initializePackagesInProject: sparkleService ] ].
+	packages whenSelectionChangedDo: [ :selection | 
+		selection selectedItem ifNotNil: [ :sparkleService | 
+			self initializeClassesInPackage: sparkleService ] ].
+	classes whenSelectionChangedDo: [ :selection | 
+		selection selectedItem ifNotNil: [ :sparkleService | 
+			self initializeCategoriesInPackage: sparkleService ] ]
 ]
 
 { #category : 'initialization' }
@@ -27,6 +33,41 @@ SparklePlayBrowserPresenter >> initialize [
 	service := SpkRowanServiceClient new registerWith:
 		           SpkLauncherPresenter connection.
 	self initializeProjects 
+]
+
+{ #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializeCategoriesInPackage: classSparkleService [
+
+	| sparkleServices classService categoryStrings |
+	sparkleServices := service
+		                   remotePerformOnService: classSparkleService
+		                   selector: #update
+		                   arguments: #(  ).
+	classService := sparkleServices detect: [ :sparkleService | 
+		                sparkleService rowanServiceClassName
+		                = #RowanClassService ].
+	categoryStrings := classService blobPropertyNamed: #categories.
+	categories
+		items: categoryStrings;
+		sortingBlock: [ :a :b | a < b ]
+]
+
+{ #category : 'initialization' }
+SparklePlayBrowserPresenter >> initializeClassesInPackage: packageSparkleService [
+
+	| sparkleServices packageService classServices |
+	sparkleServices := service
+		                   remotePerformOnService: packageSparkleService
+		                   selector: #update
+		                   arguments: #(  ).
+	packageService := sparkleServices detect: [ :sparkleService | 
+		                   sparkleService rowanServiceClassName
+		                   = #RowanPackageService ].
+	classServices := packageService blobPropertyNamed: #classes. 
+	classes
+		items: classServices;
+		sortingBlock: [ :a :b | 
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
 ]
 
 { #category : 'initialization' }
