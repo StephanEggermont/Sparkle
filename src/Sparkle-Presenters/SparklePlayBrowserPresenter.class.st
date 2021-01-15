@@ -29,7 +29,7 @@ SparklePlayBrowserPresenter >> connectPresenters [
 			self getMethodsForClass: sparkleService ] ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
-			self getSourceForClass: sparkleService ] ]
+			self getSourceForMethod: sparkleService ] ]
 ]
 
 { #category : 'list management' }
@@ -104,16 +104,12 @@ SparklePlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getSourceForClass: methodSparkleService [
-
-	"| sparkleServices methodService |
-	sparkleServices := service
-		                   remotePerformOnService: methodSparkleService
-		                   selector: #update
-		                   arguments: #(  ).
-	methodService := sparkleServices detect: [ :sparkleService | 
-		                 sparkleService rowanServiceClassName
-		                 = #RowanMethodService ]."
+SparklePlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
+	"This probably doesn't really update. Need to fix. "
+	service
+		remotePerformOnService: methodSparkleService
+		selector: #update
+		arguments: #(  ).
 	source text: (methodSparkleService blobPropertyNamed: #source)
 ]
 
