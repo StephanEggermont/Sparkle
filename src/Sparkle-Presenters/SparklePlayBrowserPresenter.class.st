@@ -27,6 +27,8 @@ SparklePlayBrowserPresenter >> connectPresenters [
 		selection selectedItem ifNotNil: [ :sparkleService | 
 			self getCategoriesForClass: sparkleService.
 			self getMethodsForClass: sparkleService ] ].
+	categories whenSelectionChangedDo: [ :selection | 
+			self getMethodsForClass: classes selectedItem ] ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
 			self getSourceForMethod: sparkleService ] ]
@@ -70,7 +72,7 @@ SparklePlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 { #category : 'list management' }
 SparklePlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 
-	| sparkleServices classService methodServices |
+	| sparkleServices classService methodServices displayedMethodServices |
 	sparkleServices := service
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
@@ -79,8 +81,15 @@ SparklePlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 		                sparkleService rowanServiceClassName
 		                = #RowanClassService ].
 	methodServices := classService blobPropertyNamed: #methods.
+	displayedMethodServices := categories selectedItems isEmpty
+		                           ifTrue: [ methodServices ]
+		                           ifFalse: [ 
+			                           methodServices select: [ :methodService | 
+				                           categories selectedItems includes:
+					                           (methodService blobPropertyNamed:
+						                            #category) ] ].
 	methods
-		items: methodServices;
+		items: displayedMethodServices;
 		sortingBlock: [ :a :b | 
 			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ]
 ]
@@ -148,6 +157,7 @@ SparklePlayBrowserPresenter >> initializeListPresenters [
 	classes display: [ :sparkleService | 
 		sparkleService blobPropertyNamed: #name ].
 	categories := self initializeListNamed: 'Categories' in: box.
+	categories beMultipleSelection. 
 	methods := self initializeListNamed: 'Methods' in: box.
 	methods display: [ :sparkleService | 
 		sparkleService blobPropertyNamed: #selector ]
