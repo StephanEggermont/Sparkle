@@ -28,7 +28,10 @@ SparklePlayBrowserPresenter >> connectPresenters [
 			self getCategoriesForClass: sparkleService.
 			self getMethodsForClass: sparkleService ] ].
 	categories whenSelectionChangedDo: [ :selection | 
-			self getMethodsForClass: classes selectedItem ]
+		self getMethodsForClass: classes selectedItem ].
+	methods whenSelectionChangedDo: [ :selection | 
+		selection selectedItem ifNotNil: [ :sparkleService | 
+			self getSourceForMethod: sparkleService ] ]
 ]
 
 { #category : 'list management' }
