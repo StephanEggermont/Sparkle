@@ -32,6 +32,23 @@ SparklePlayBrowserPresenter >> connectPresenters [
 ]
 
 { #category : 'list management' }
+SparklePlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
+
+	| sparkleServices classService categoryStrings |
+	sparkleServices := service
+		                   remotePerformOnService: classSparkleService
+		                   selector: #update
+		                   arguments: #(  ).
+	classService := sparkleServices detect: [ :sparkleService | 
+		                sparkleService rowanServiceClassName
+		                = #RowanClassService ].
+	categoryStrings := classService blobPropertyNamed: #categories.
+	categories
+		items: categoryStrings;
+		sortingBlock: [ :a :b | a < b ]
+]
+
+{ #category : 'list management' }
 SparklePlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 
 	| sparkleServices packageService classServices |
