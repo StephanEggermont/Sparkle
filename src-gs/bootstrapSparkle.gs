@@ -1642,7 +1642,7 @@ removeallmethods SpkUndoManagerTest
 removeallclassmethods SpkUndoManagerTest
 
 doit
-(WriteStream
+(WriteStreamPortable
 	subclass: 'SpkLimitedWriteStream'
 	instVarNames: #( limit limitBlock )
 	classVars: #(  )
@@ -4358,6 +4358,12 @@ forTool: anExplorerTool
 		  yourself
 %
 
+category: 'class initialization'
+classmethod: SpkExplorerServiceServer
+initialize
+	self initializeServiceClassesForToolTypes
+%
+
 category: 'initialization'
 classmethod: SpkExplorerServiceServer
 initializeServiceClassesForToolTypes
@@ -4374,8 +4380,7 @@ category: 'accessing'
 classmethod: SpkExplorerServiceServer
 serviceClassesForToolTypes
 
-	^ serviceClassesForToolTypes ifNil: [ 
-		  self initializeServiceClassesForToolTypes ]
+	^ serviceClassesForToolTypes
 %
 
 category: 'accessing'
@@ -4784,7 +4789,9 @@ createInspectorService
 
 	| objectToInspect newTool |
 	objectToInspect := tool value.
-	newTool := SpkInspectorTool on: objectToInspect.
+	newTool := (SpkInspectorTool on: objectToInspect)
+		           explorerTool: tool explorerTool;
+		           yourself.
 	^ SpkInspectorServiceServer forTool: newTool
 %
 
@@ -6415,5 +6422,6 @@ should: aBlock notTakeMoreThan: aDuration
 
 run
 GemToGemAnnouncement initialize.
+SpkExplorerServiceServer initialize.
 true
 %
