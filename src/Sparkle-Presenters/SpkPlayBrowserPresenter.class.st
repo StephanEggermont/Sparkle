@@ -1,5 +1,5 @@
 Class {
-	#name : 'SparklePlayBrowserPresenter',
+	#name : 'SpkPlayBrowserPresenter',
 	#superclass : 'SpkPresenter',
 	#instVars : [
 		'projects',
@@ -8,6 +8,8 @@ Class {
 		'categories',
 		'methods',
 		'source',
+		'metaClass',
+		'metaInstance',
 		'connection',
 		'service'
 	],
@@ -15,7 +17,18 @@ Class {
 }
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> connectPresenters [
+SpkPlayBrowserPresenter >> connectMetaRadioButtons [
+
+	metaInstance whenActivatedDo: [ 
+		self getMethodsForClass: classes selectedItem ].
+	metaInstance whenDeactivatedDo: [ 
+		self getMethodsForClass: classes selectedItem ].
+	metaClass whenChangedDo: [ 
+		self getMethodsForClass: classes selectedItem ]
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> connectPresenters [
 
 	projects whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
@@ -31,11 +44,12 @@ SparklePlayBrowserPresenter >> connectPresenters [
 		self getMethodsForClass: classes selectedItem ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
-			self getSourceForMethod: sparkleService ] ]
+			self getSourceForMethod: sparkleService ] ].
+	self connectMetaRadioButtons
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
+SpkPlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 
 	| sparkleServices classService categoryStrings |
 	sparkleServices := service
@@ -52,7 +66,7 @@ SparklePlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
+SpkPlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 
 	| sparkleServices packageService classServices |
 	sparkleServices := service
@@ -70,7 +84,7 @@ SparklePlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getMethodsForClass: classSparkleService [
+SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 
 	| sparkleServices classService methodServices displayedMethodServices |
 	sparkleServices := service
@@ -95,7 +109,7 @@ SparklePlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
+SpkPlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 
 	| sparkleServices projectService packageServices |
 	sparkleServices := service
@@ -113,7 +127,7 @@ SparklePlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 ]
 
 { #category : 'list management' }
-SparklePlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
+SpkPlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
 	"This probably doesn't really update. Need to fix. "
 	service
 		remotePerformOnService: methodSparkleService
@@ -123,7 +137,7 @@ SparklePlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initialize [
+SpkPlayBrowserPresenter >> initialize [
 	super initialize.
 	service := SpkRowanServiceClient new registerWith:
 		           SpkLauncherPresenter connection.
@@ -131,7 +145,7 @@ SparklePlayBrowserPresenter >> initialize [
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializeListNamed: string in: box [
+SpkPlayBrowserPresenter >> initializeListNamed: string in: box [
 
 	| newList |
 	box
@@ -145,7 +159,7 @@ SparklePlayBrowserPresenter >> initializeListNamed: string in: box [
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializeListPresenters [
+SpkPlayBrowserPresenter >> initializeListPresenters [
 
 	| box |
 	self layout add: (box := SpkBoxLayout newHorizontal).
@@ -164,16 +178,34 @@ SparklePlayBrowserPresenter >> initializeListPresenters [
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializePresenters [
+SpkPlayBrowserPresenter >> initializeMetaPresenter [
+
+	| box |
+	box := SpBoxLayout newHorizontal
+		       add: (metaInstance := self newRadioButton);
+		       add: (metaClass := self newRadioButton);
+		       yourself.
+	metaInstance label: 'Instance'.
+	metaInstance associatedRadioButtons: { metaInstance }.
+	metaClass label: 'Class'.
+	self layout add: box withConstraints: [ :constraints | 
+		constraints
+			width: 175;
+			height: 25 ]
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
 	self initializeListPresenters.
+	self initializeMetaPresenter. 
 	self initializeSourcePresenter.
 	
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializeProjects [
+SpkPlayBrowserPresenter >> initializeProjects [
 
 	| sparkleServices projectServices |
 	sparkleServices := service
@@ -192,13 +224,13 @@ SparklePlayBrowserPresenter >> initializeProjects [
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializeSourcePresenter [
+SpkPlayBrowserPresenter >> initializeSourcePresenter [
 
 	self layout add: (source := self newCode)
 ]
 
 { #category : 'initialization' }
-SparklePlayBrowserPresenter >> initializeWindow: aWindowPresenter [
+SpkPlayBrowserPresenter >> initializeWindow: aWindowPresenter [
 
 	aWindowPresenter
 		title: 'Sparkle Browser';
@@ -208,13 +240,13 @@ SparklePlayBrowserPresenter >> initializeWindow: aWindowPresenter [
 ]
 
 { #category : 'constants' }
-SparklePlayBrowserPresenter >> labelHeight [
+SpkPlayBrowserPresenter >> labelHeight [
 
 	^20
 ]
 
 { #category : 'accessing' }
-SparklePlayBrowserPresenter >> newLayout [
+SpkPlayBrowserPresenter >> newLayout [
 
 	^ SpkBoxLayout newVertical
 ]

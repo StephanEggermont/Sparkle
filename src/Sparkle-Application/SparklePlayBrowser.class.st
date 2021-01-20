@@ -26,5 +26,5 @@ SparklePlayBrowser class >> menuCommandOn: aBuilder [
 { #category : 'running' }
 SparklePlayBrowser >> start [
 
-	^ (self new: SparklePlayBrowserPresenter) openWithSpec
+	^ (self new: SpkPlayBrowserPresenter) openWithSpec
 ]
