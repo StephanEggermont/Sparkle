@@ -39,6 +39,12 @@ SpkRowanService >> blobPropertyNamed: symbol ifAbsent: absentBlock [
 ]
 
 { #category : 'accessing' }
+SpkRowanService >> blobPropertyNamed: symbol put: value [
+
+	^ blob at: symbol put: value
+]
+
+{ #category : 'accessing' }
 SpkRowanService >> rowanServiceClassName [
 
 	^ rowanServiceClassName

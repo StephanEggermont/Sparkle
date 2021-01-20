@@ -19,12 +19,9 @@ Class {
 { #category : 'initialization' }
 SpkPlayBrowserPresenter >> connectMetaRadioButtons [
 
-	metaInstance whenActivatedDo: [ 
-		self getMethodsForClass: classes selectedItem ].
-	metaInstance whenDeactivatedDo: [ 
-		self getMethodsForClass: classes selectedItem ].
-	metaClass whenChangedDo: [ 
-		self getMethodsForClass: classes selectedItem ]
+	metaInstance whenActivatedDo: [ self updateMethods ].
+	metaInstance whenDeactivatedDo: [ self updateMethods ].
+	metaClass whenChangedDo: [ self updateMethods ]
 ]
 
 { #category : 'initialization' }
@@ -52,6 +49,8 @@ SpkPlayBrowserPresenter >> connectPresenters [
 SpkPlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 
 	| sparkleServices classService categoryStrings |
+	classSparkleService ifNil: [ ^self ]. 
+	classSparkleService blobPropertyNamed: #meta put: metaClass state.  
 	sparkleServices := service
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
@@ -87,6 +86,8 @@ SpkPlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 
 	| sparkleServices classService methodServices displayedMethodServices |
+	classSparkleService ifNil: [ ^self ]. 
+	classSparkleService blobPropertyNamed: #meta put: metaClass state.  
 	sparkleServices := service
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
@@ -186,7 +187,7 @@ SpkPlayBrowserPresenter >> initializeMetaPresenter [
 		       add: (metaClass := self newRadioButton);
 		       yourself.
 	metaInstance label: 'Instance'.
-	metaInstance associatedRadioButtons: { metaInstance }.
+	metaInstance associatedRadioButtons: { metaClass }.
 	metaClass label: 'Class'.
 	self layout add: box withConstraints: [ :constraints | 
 		constraints
@@ -249,4 +250,11 @@ SpkPlayBrowserPresenter >> labelHeight [
 SpkPlayBrowserPresenter >> newLayout [
 
 	^ SpkBoxLayout newVertical
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> updateMethods [
+
+	self getCategoriesForClass: classes selectedItem.
+	self getMethodsForClass: classes selectedItem
 ]
