@@ -10,11 +10,32 @@ Class {
 		'source',
 		'metaClass',
 		'metaInstance',
+		'toolbar',
 		'connection',
 		'service'
 	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
+
+{ #category : 'actions' }
+SpkPlayBrowserPresenter >> abortTransaction [
+
+	service
+		remotePerformOn: #RowanAnsweringService
+		selector: #exec:
+		arguments: #( 'System abortTransaction' ).
+	self inform: 'Aborted transaction'
+]
+
+{ #category : 'actions' }
+SpkPlayBrowserPresenter >> commitTransaction [
+
+	service
+		remotePerformOn: #RowanAnsweringService
+		selector: #exec:
+		arguments: #( 'System commitTransaction' ).
+	self inform: 'Committed transaction'
+]
 
 { #category : 'initialization' }
 SpkPlayBrowserPresenter >> connectMetaRadioButtons [
@@ -149,13 +170,11 @@ SpkPlayBrowserPresenter >> initialize [
 SpkPlayBrowserPresenter >> initializeListNamed: string in: box [
 
 	| newList |
-	box
-		add: (SpkBoxLayout newVertical
-				 add: (newList := self newList
-						             headerTitle: string;
-						             yourself);
-				 yourself)
-		withConstraints: [ :constraints | constraints width: 200 ].
+	box add: (SpkBoxLayout newVertical
+			 add: (newList := self newList
+					             headerTitle: string;
+					             yourself);
+			 yourself).
 	^ newList
 ]
 
@@ -199,6 +218,7 @@ SpkPlayBrowserPresenter >> initializeMetaPresenter [
 SpkPlayBrowserPresenter >> initializePresenters [
 
 	super initializePresenters.
+	self initializeToolbar.
 	self initializeListPresenters.
 	self initializeMetaPresenter. 
 	self initializeSourcePresenter.
@@ -231,6 +251,28 @@ SpkPlayBrowserPresenter >> initializeSourcePresenter [
 ]
 
 { #category : 'initialization' }
+SpkPlayBrowserPresenter >> initializeToolbar [
+
+	toolbar := self newToolbar
+		           addItem: (SpToolbarButtonPresenter new
+				            label: 'Abort';
+				            icon: (self iconNamed: #thumbsDown);
+				            help: 'Abort';
+				            action: [ self abortTransaction ];
+				            yourself);
+		           addItem: (SpToolbarButtonPresenter new
+				            label: 'Commit';
+				            icon: (self iconNamed: #thumbsUp);
+				            help: 'Commit';
+				            action: [ self commitTransaction ];
+				            yourself);
+		           yourself.
+	self layout
+		add: toolbar
+		withConstraints: [ :constraints | constraints height: 30 ]
+]
+
+{ #category : 'initialization' }
 SpkPlayBrowserPresenter >> initializeWindow: aWindowPresenter [
 
 	aWindowPresenter
@@ -250,6 +292,16 @@ SpkPlayBrowserPresenter >> labelHeight [
 SpkPlayBrowserPresenter >> newLayout [
 
 	^ SpkBoxLayout newVertical
+]
+
+{ #category : 'actions' }
+SpkPlayBrowserPresenter >> saveMethod: methodSparkleService category: category [
+
+	service
+		remotePerformOnService: methodSparkleService
+		selector: #saveMethodSource:category:
+		arguments: (Array with: source text with: category).
+	source text: (methodSparkleService blobPropertyNamed: #source)
 ]
 
 { #category : 'initialization' }

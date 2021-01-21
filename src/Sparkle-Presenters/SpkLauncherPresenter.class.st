@@ -217,7 +217,9 @@ SpkLauncherPresenter >> initializeWindow: aWindowPresenter [
 	aWindowPresenter
 		title: self launcherTitle;
 		initialExtent: 350 @ 200;
-		whenClosedDo: [ self disconnect ]
+		whenClosedDo: [ self disconnect ];
+		borderColor: Color purple;
+		borderWidth: 3
 ]
 
 { #category : 'constants' }
