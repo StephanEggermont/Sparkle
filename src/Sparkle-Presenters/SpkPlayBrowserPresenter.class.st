@@ -24,6 +24,7 @@ SpkPlayBrowserPresenter >> abortTransaction [
 		remotePerformOn: #RowanAnsweringService
 		selector: #exec:
 		arguments: #( 'System abortTransaction' ).
+	self resetListsRetainingSelections. 
 	self inform: 'Aborted transaction'
 ]
 
@@ -57,9 +58,13 @@ SpkPlayBrowserPresenter >> connectPresenters [
 	classes whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
 			self getCategoriesForClass: sparkleService.
-			self getMethodsForClass: sparkleService ] ].
+			self
+				getMethodsForClass: sparkleService
+				shouldRetainSelections: false ] ].
 	categories whenSelectionChangedDo: [ :selection | 
-		self getMethodsForClass: classes selectedItem ].
+		self
+			getMethodsForClass: classes selectedItem
+			shouldRetainSelections: false ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
 			self getSourceForMethod: sparkleService ] ].
@@ -82,7 +87,7 @@ SpkPlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 	categoryStrings := classService blobPropertyNamed: #categories.
 	categories
 		items: categoryStrings;
-		sortingBlock: [ :a :b | a < b ]
+		sortingBlock: [ :a :b | a < b ].
 ]
 
 { #category : 'list management' }
@@ -94,21 +99,27 @@ SpkPlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 		                   selector: #update
 		                   arguments: #(  ).
 	packageService := sparkleServices detect: [ :sparkleService | 
-		                   sparkleService rowanServiceClassName
-		                   = #RowanPackageService ].
-	classServices := packageService blobPropertyNamed: #classes. 
+		                  sparkleService rowanServiceClassName
+		                  = #RowanPackageService ].
+	classServices := packageService blobPropertyNamed: #classes.
 	classes
 		items: classServices;
 		sortingBlock: [ :a :b | 
-			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ].
+	categories items: OrderedCollection new.
+	methods items: OrderedCollection new
 ]
 
 { #category : 'list management' }
-SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService [
+SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService shouldRetainSelections: shouldRetainSelections [
 
-	| sparkleServices classService methodServices displayedMethodServices |
-	classSparkleService ifNil: [ ^self ]. 
-	classSparkleService blobPropertyNamed: #meta put: metaClass state.  
+	| sparkleServices classService methodServices displayedMethodServices selections |
+	classSparkleService ifNil: [ ^ self ].
+	shouldRetainSelections ifTrue: [ 
+		selections := methods selection selectedItems collect: [ 
+			              :methodService | 
+			              methodService blobPropertyNamed: #selector ] ].
+	classSparkleService blobPropertyNamed: #meta put: metaClass state.
 	sparkleServices := service
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
@@ -117,17 +128,19 @@ SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService [
 		                sparkleService rowanServiceClassName
 		                = #RowanClassService ].
 	methodServices := classService blobPropertyNamed: #methods.
-	displayedMethodServices := categories selectedItems isEmpty
-		                           ifTrue: [ methodServices ]
-		                           ifFalse: [ 
-			                           methodServices select: [ :methodService | 
-				                           categories selectedItems includes:
-					                           (methodService blobPropertyNamed:
-						                            #category) ] ].
+	displayedMethodServices := self methodsInSelectedCategory:
+		                           methodServices.
 	methods
 		items: displayedMethodServices;
 		sortingBlock: [ :a :b | 
-			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ]
+			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ].
+	shouldRetainSelections ifTrue: [ 
+		methods disableActivationDuring: [ 
+			| toBeSelected |
+			toBeSelected := methods items select: [ :methodService | 
+				                selections includes:
+					                (methodService blobPropertyNamed: #selector) ].
+			methods selectItems: toBeSelected ] ]
 ]
 
 { #category : 'list management' }
@@ -145,7 +158,10 @@ SpkPlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 	packages
 		items: packageServices;
 		sortingBlock: [ :a :b | 
-			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ].
+	classes items: OrderedCollection new.
+	categories items: OrderedCollection new. 
+	methods items: OrderedCollection new. 
 ]
 
 { #category : 'list management' }
@@ -246,8 +262,12 @@ SpkPlayBrowserPresenter >> initializeProjects [
 
 { #category : 'initialization' }
 SpkPlayBrowserPresenter >> initializeSourcePresenter [
-
-	self layout add: (source := self newCode)
+	
+	self layout add: (source := self instantiate: SpkCodePresenter).
+	source whenSubmitDo: [ :text | 
+		self
+			saveMethod: classes selectedItem
+			category: categories selectedItem ]
 ]
 
 { #category : 'initialization' }
@@ -288,25 +308,79 @@ SpkPlayBrowserPresenter >> labelHeight [
 	^20
 ]
 
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> methodsInSelectedCategory: methodServices [
+
+	^ categories selectedItems isEmpty
+		  ifTrue: [ methodServices ]
+		  ifFalse: [ 
+			  methodServices select: [ :methodService | 
+				  categories selectedItems includes:
+					  (methodService blobPropertyNamed: #category) ] ]
+]
+
 { #category : 'accessing' }
 SpkPlayBrowserPresenter >> newLayout [
 
 	^ SpkBoxLayout newVertical
 ]
 
-{ #category : 'actions' }
-SpkPlayBrowserPresenter >> saveMethod: methodSparkleService category: category [
+{ #category : 'private-actions' }
+SpkPlayBrowserPresenter >> presenterLists [
 
-	service
-		remotePerformOnService: methodSparkleService
-		selector: #saveMethodSource:category:
-		arguments: (Array with: source text with: category).
-	source text: (methodSparkleService blobPropertyNamed: #source)
+	^ Array
+		  with: projects
+		  with: packages
+		  with: classes
+		  with: categories
+		  with: methods
+]
+
+{ #category : 'private-actions' }
+SpkPlayBrowserPresenter >> resetListRetainingSelections: listPresenter [
+
+	listPresenter disableActivationDuring: [ 
+		| selections |
+		selections := listPresenter selection selectedItems.
+		listPresenter items: listPresenter items.
+		listPresenter selectItems: selections ]
+]
+
+{ #category : 'private-actions' }
+SpkPlayBrowserPresenter >> resetListsRetainingSelections [
+
+	self
+		getMethodsForClass: classes selection selectedItem
+		shouldRetainSelections: true
+]
+
+{ #category : 'actions' }
+SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
+
+	| methodService sparkleServices |
+	sparkleServices := service
+		                   remotePerformOnService: classSparkleService
+		                   selector: #saveMethodSource:category:
+		                   arguments:
+		                   (Array with: source text asString with: category).
+	methodService := sparkleServices detect: [ :sparkleService | 
+		                 sparkleService rowanServiceClassName
+		                 = #RowanMethodService ].
+	source text: (methodService blobPropertyNamed: #source).
+	methods
+		items: methods items , (Array with: methodService);
+		sortingBlock: [ :a :b | 
+			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ].
+	methods selectItem: methodService.
+	methods verticalAlignment desiredVisibleRow:
+		(methods items size min: (methods items indexOf: methodService))
 ]
 
 { #category : 'initialization' }
 SpkPlayBrowserPresenter >> updateMethods [
 
 	self getCategoriesForClass: classes selectedItem.
-	self getMethodsForClass: classes selectedItem
+	self
+		getMethodsForClass: classes selectedItem
+		shouldRetainSelections: false
 ]

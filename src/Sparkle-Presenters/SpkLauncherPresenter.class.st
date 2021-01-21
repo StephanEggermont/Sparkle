@@ -86,6 +86,7 @@ SpkLauncherPresenter >> disconnect [
 
 	Connection ifNotNil: [ :conn | 
 		SparkleTaskspace allInstances do: [ :taskspace | taskspace close ].
+		SparklePlayBrowser allInstances do: [ :browser | browser close ].
 		conn close.
 		Connection := nil ]
 ]
