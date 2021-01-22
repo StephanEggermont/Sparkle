@@ -12,7 +12,9 @@ Class {
 		'metaInstance',
 		'toolbar',
 		'connection',
-		'service'
+		'service',
+		'lowerTabs',
+		'classDefinition'
 	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
@@ -26,6 +28,32 @@ SpkPlayBrowserPresenter >> abortTransaction [
 		arguments: #( 'System abortTransaction' ).
 	self resetListsRetainingSelections. 
 	self inform: 'Aborted transaction'
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> addClassDefinitionPage [
+
+	^ SpNotebookPage title: 'Class Definition' icon: nil provider: [ 
+		  classDefinition := self instantiate: SpkCodePresenter.
+		  classDefinition whenSubmitDo: [ :text | 
+			  self
+				  saveClass: classes selectedItem
+				  definition: classDefinition text asString ].
+		  classDefinition ]
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> addMethodSourcePage [
+
+	source := self instantiate: SpkCodePresenter.
+	source whenSubmitDo: [ :text | 
+		self
+			saveMethod: classes selectedItem
+			category: categories selectedItem ].
+	^ SpNotebookPage
+		  title: 'Method Source'
+		  icon: nil
+		  provider: [ source ]
 ]
 
 { #category : 'actions' }
@@ -57,10 +85,7 @@ SpkPlayBrowserPresenter >> connectPresenters [
 			self getClassesForPackage: sparkleService ] ].
 	classes whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
-			self getCategoriesForClass: sparkleService.
-			self
-				getMethodsForClass: sparkleService
-				shouldRetainSelections: false ] ].
+			self updateClassInfoFrom: sparkleService ] ].
 	categories whenSelectionChangedDo: [ :selection | 
 		self
 			getMethodsForClass: classes selectedItem
@@ -210,7 +235,17 @@ SpkPlayBrowserPresenter >> initializeListPresenters [
 	categories beMultipleSelection. 
 	methods := self initializeListNamed: 'Methods' in: box.
 	methods display: [ :sparkleService | 
-		sparkleService blobPropertyNamed: #selector ]
+		sparkleService blobPropertyNamed: #selector ].
+	methods beMultipleSelection
+]
+
+{ #category : 'initialization' }
+SpkPlayBrowserPresenter >> initializeLowerTabs [
+
+	lowerTabs := self newNotebook.
+	lowerTabs addPage: self addClassDefinitionPage.
+	lowerTabs addPage: self addMethodSourcePage.
+	self layout add: lowerTabs
 ]
 
 { #category : 'initialization' }
@@ -237,7 +272,7 @@ SpkPlayBrowserPresenter >> initializePresenters [
 	self initializeToolbar.
 	self initializeListPresenters.
 	self initializeMetaPresenter. 
-	self initializeSourcePresenter.
+	self initializeLowerTabs. 
 	
 ]
 
@@ -258,16 +293,6 @@ SpkPlayBrowserPresenter >> initializeProjects [
 			sparkleService blobPropertyNamed: #name ];
 		sortingBlock: [ :a :b | 
 			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ]
-]
-
-{ #category : 'initialization' }
-SpkPlayBrowserPresenter >> initializeSourcePresenter [
-	
-	self layout add: (source := self instantiate: SpkCodePresenter).
-	source whenSubmitDo: [ :text | 
-		self
-			saveMethod: classes selectedItem
-			category: categories selectedItem ]
 ]
 
 { #category : 'initialization' }
@@ -355,6 +380,28 @@ SpkPlayBrowserPresenter >> resetListsRetainingSelections [
 ]
 
 { #category : 'actions' }
+SpkPlayBrowserPresenter >> saveClass: classSparkleService definition: definitionString [
+
+	| classService sparkleServices |
+	true ifTrue:[^self]. "not working yet"
+	sparkleServices := service
+		                   remotePerformOn: #RowanBrowserService
+		                   selector: #compileClass:
+		                   arguments: (Array with: definitionString).
+	classService := sparkleServices detect: [ :sparkleService | 
+		                sparkleService rowanServiceClassName
+		                = #RowanClassService ].
+	source text: (classService blobPropertyNamed: #template).
+	classes
+		items: classes items , (Array with: classService);
+		sortingBlock: [ :a :b | 
+			(a blobPropertyNamed: #name) < (b blobPropertyNamed: #name) ].
+	methods selectItem: classService.
+	methods verticalAlignment desiredVisibleRow:
+		(methods items size min: (methods items indexOf: classService))
+]
+
+{ #category : 'actions' }
 SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
 
 	| methodService sparkleServices |
@@ -374,6 +421,15 @@ SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
 	methods selectItem: methodService.
 	methods verticalAlignment desiredVisibleRow:
 		(methods items size min: (methods items indexOf: methodService))
+]
+
+{ #category : 'private-actions' }
+SpkPlayBrowserPresenter >> updateClassInfoFrom: sparkleService [
+
+	classDefinition text: (sparkleService blobPropertyNamed: #template).
+	self getCategoriesForClass: sparkleService.
+	self getMethodsForClass: sparkleService shouldRetainSelections: false.
+	source text: String new. 
 ]
 
 { #category : 'initialization' }
