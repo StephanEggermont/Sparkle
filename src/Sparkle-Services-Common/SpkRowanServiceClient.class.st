@@ -4,6 +4,18 @@ Class {
 	#category : 'Sparkle-Services-Common'
 }
 
+{ #category : 'accessing' }
+SpkRowanServiceClient >> meta [ 
+
+	^(self blobPropertyNamed: #meta)
+]
+
+{ #category : 'accessing' }
+SpkRowanServiceClient >> oop [
+
+	^ self blobPropertyNamed: #oop
+]
+
 { #category : 'remote' }
 SpkRowanServiceClient >> remotePerformOn: classString selector: aSelectorSymbol arguments: anArray [
 

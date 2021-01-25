@@ -12,17 +12,34 @@ Class {
 		'metaInstance',
 		'toolbar',
 		'connection',
-		'service',
 		'lowerTabs',
-		'classDefinition'
+		'classDefinition',
+		'rsrService'
+	],
+	#classVars : [
+		'RegisteredServices'
 	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
 
+{ #category : 'registering' }
+SpkPlayBrowserPresenter class >> clearRegisteredServices [ 
+
+	"self clearRegisteredServices"
+	
+	RegisteredServices := nil.
+]
+
+{ #category : 'registering' }
+SpkPlayBrowserPresenter class >> registeredServices [
+
+	^ RegisteredServices
+]
+
 { #category : 'actions' }
 SpkPlayBrowserPresenter >> abortTransaction [
 
-	service
+	rsrService
 		remotePerformOn: #RowanAnsweringService
 		selector: #exec:
 		arguments: #( 'System abortTransaction' ).
@@ -56,10 +73,27 @@ SpkPlayBrowserPresenter >> addMethodSourcePage [
 		  provider: [ source ]
 ]
 
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> allClassServices [
+
+	| otherBrowsers allOtherClassServices |
+	otherBrowsers := self class allInstances.
+	allOtherClassServices := OrderedCollection new.
+	otherBrowsers do: [ :otherBrowser | 
+		allOtherClassServices addAll: otherBrowser classes ].
+	^ allOtherClassServices
+]
+
+{ #category : 'accessing' }
+SpkPlayBrowserPresenter >> classes [
+
+	^ classes items
+]
+
 { #category : 'actions' }
 SpkPlayBrowserPresenter >> commitTransaction [
 
-	service
+	rsrService
 		remotePerformOn: #RowanAnsweringService
 		selector: #exec:
 		arguments: #( 'System commitTransaction' ).
@@ -92,8 +126,27 @@ SpkPlayBrowserPresenter >> connectPresenters [
 			shouldRetainSelections: false ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
+			lowerTabs selectPageIndex: 2. "need to be more explicit here. select method page" 
 			self getSourceForMethod: sparkleService ] ].
 	self connectMetaRadioButtons
+]
+
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> ensureUniqueClassServicesfor: packageService [
+
+	"If we have a class sparkle service in another class already
+	with the appropriate meta, use it instead"
+
+	| allOtherClassServices uniqueClassServices |
+	allOtherClassServices := self allClassServices.
+	uniqueClassServices := (packageService blobPropertyNamed: #classes) 
+		                       collect: [ :classService | 
+			                       allOtherClassServices
+				                       detect: [ :other | 
+					                       other oop = classService oop and: [ 
+						                       classService meta = other meta ] ]
+				                       ifNone: [ classService ] ].
+	^ uniqueClassServices
 ]
 
 { #category : 'list management' }
@@ -102,7 +155,7 @@ SpkPlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 	| sparkleServices classService categoryStrings |
 	classSparkleService ifNil: [ ^self ]. 
 	classSparkleService blobPropertyNamed: #meta put: metaClass state.  
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
 		                   arguments: #(  ).
@@ -119,14 +172,15 @@ SpkPlayBrowserPresenter >> getCategoriesForClass: classSparkleService [
 SpkPlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 
 	| sparkleServices packageService classServices |
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOnService: packageSparkleService
 		                   selector: #update
 		                   arguments: #(  ).
 	packageService := sparkleServices detect: [ :sparkleService | 
 		                  sparkleService rowanServiceClassName
 		                  = #RowanPackageService ].
-	classServices := packageService blobPropertyNamed: #classes.
+
+	classServices := self ensureUniqueClassServicesfor: packageService.
 	classes
 		items: classServices;
 		sortingBlock: [ :a :b | 
@@ -145,7 +199,7 @@ SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService shouldRetainS
 			              :methodService | 
 			              methodService blobPropertyNamed: #selector ] ].
 	classSparkleService blobPropertyNamed: #meta put: metaClass state.
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOnService: classSparkleService
 		                   selector: #update
 		                   arguments: #(  ).
@@ -172,7 +226,7 @@ SpkPlayBrowserPresenter >> getMethodsForClass: classSparkleService shouldRetainS
 SpkPlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 
 	| sparkleServices projectService packageServices |
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOnService: projectSparkleService
 		                   selector: #update
 		                   arguments: #(  ).
@@ -191,18 +245,20 @@ SpkPlayBrowserPresenter >> getPackagesForProject: projectSparkleService [
 
 { #category : 'list management' }
 SpkPlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
+
 	"This probably doesn't really update. Need to fix. "
-	service
+
+	rsrService
 		remotePerformOnService: methodSparkleService
 		selector: #update
 		arguments: #(  ).
-	source text: (methodSparkleService blobPropertyNamed: #source)
+	self updateMethodSourceFrom: methodSparkleService
 ]
 
 { #category : 'initialization' }
 SpkPlayBrowserPresenter >> initialize [
 	super initialize.
-	service := SpkRowanServiceClient new registerWith:
+	rsrService := SpkRowanServiceClient new registerWith:
 		           SpkLauncherPresenter connection.
 	self initializeProjects 
 ]
@@ -280,7 +336,7 @@ SpkPlayBrowserPresenter >> initializePresenters [
 SpkPlayBrowserPresenter >> initializeProjects [
 
 	| sparkleServices projectServices |
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOn: 'RowanBrowserService'
 		                   selector: #updateProjects
 		                   arguments: #(  ).
@@ -351,27 +407,6 @@ SpkPlayBrowserPresenter >> newLayout [
 ]
 
 { #category : 'private-actions' }
-SpkPlayBrowserPresenter >> presenterLists [
-
-	^ Array
-		  with: projects
-		  with: packages
-		  with: classes
-		  with: categories
-		  with: methods
-]
-
-{ #category : 'private-actions' }
-SpkPlayBrowserPresenter >> resetListRetainingSelections: listPresenter [
-
-	listPresenter disableActivationDuring: [ 
-		| selections |
-		selections := listPresenter selection selectedItems.
-		listPresenter items: listPresenter items.
-		listPresenter selectItems: selections ]
-]
-
-{ #category : 'private-actions' }
 SpkPlayBrowserPresenter >> resetListsRetainingSelections [
 
 	self
@@ -384,7 +419,7 @@ SpkPlayBrowserPresenter >> saveClass: classSparkleService definition: definition
 
 	| classService sparkleServices |
 	true ifTrue:[^self]. "not working yet"
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOn: #RowanBrowserService
 		                   selector: #compileClass:
 		                   arguments: (Array with: definitionString).
@@ -405,7 +440,7 @@ SpkPlayBrowserPresenter >> saveClass: classSparkleService definition: definition
 SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
 
 	| methodService sparkleServices |
-	sparkleServices := service
+	sparkleServices := rsrService
 		                   remotePerformOnService: classSparkleService
 		                   selector: #saveMethodSource:category:
 		                   arguments:
@@ -413,7 +448,7 @@ SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
 	methodService := sparkleServices detect: [ :sparkleService | 
 		                 sparkleService rowanServiceClassName
 		                 = #RowanMethodService ].
-	source text: (methodService blobPropertyNamed: #source).
+	self updateMethodSourceFrom: methodService.
 	methods
 		items: methods items , (Array with: methodService);
 		sortingBlock: [ :a :b | 
@@ -430,6 +465,13 @@ SpkPlayBrowserPresenter >> updateClassInfoFrom: sparkleService [
 	self getCategoriesForClass: sparkleService.
 	self getMethodsForClass: sparkleService shouldRetainSelections: false.
 	source text: String new. 
+]
+
+{ #category : 'updates' }
+SpkPlayBrowserPresenter >> updateMethodSourceFrom: methodSparkleService [
+
+	methods selection selectedItem == methodSparkleService ifTrue: [ 
+		source text: (methodSparkleService blobPropertyNamed: #source) ]
 ]
 
 { #category : 'initialization' }
