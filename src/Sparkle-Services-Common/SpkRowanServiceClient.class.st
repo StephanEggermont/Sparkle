@@ -1,8 +1,17 @@
 Class {
 	#name : 'SpkRowanServiceClient',
 	#superclass : 'SpkRowanService',
+	#instVars : [
+		'announcer'
+	],
 	#category : 'Sparkle-Services-Common'
 }
+
+{ #category : 'accessing' }
+SpkRowanServiceClient >> announcer [
+
+	^ announcer ifNil: [ announcer := Announcer new ]
+]
 
 { #category : 'accessing' }
 SpkRowanServiceClient >> meta [ 

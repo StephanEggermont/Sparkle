@@ -16,25 +16,8 @@ Class {
 		'classDefinition',
 		'rsrService'
 	],
-	#classVars : [
-		'RegisteredServices'
-	],
 	#category : 'Sparkle-Presenters-Presenters'
 }
-
-{ #category : 'registering' }
-SpkPlayBrowserPresenter class >> clearRegisteredServices [ 
-
-	"self clearRegisteredServices"
-	
-	RegisteredServices := nil.
-]
-
-{ #category : 'registering' }
-SpkPlayBrowserPresenter class >> registeredServices [
-
-	^ RegisteredServices
-]
 
 { #category : 'actions' }
 SpkPlayBrowserPresenter >> abortTransaction [
@@ -73,17 +56,6 @@ SpkPlayBrowserPresenter >> addMethodSourcePage [
 		  provider: [ source ]
 ]
 
-{ #category : 'list management' }
-SpkPlayBrowserPresenter >> allClassServices [
-
-	| otherBrowsers allOtherClassServices |
-	otherBrowsers := self class allInstances.
-	allOtherClassServices := OrderedCollection new.
-	otherBrowsers do: [ :otherBrowser | 
-		allOtherClassServices addAll: otherBrowser classes ].
-	^ allOtherClassServices
-]
-
 { #category : 'accessing' }
 SpkPlayBrowserPresenter >> classes [
 
@@ -119,6 +91,7 @@ SpkPlayBrowserPresenter >> connectPresenters [
 			self getClassesForPackage: sparkleService ] ].
 	classes whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
+			lowerTabs selectPageIndex: 1. "need to be intention revealing. select class page" 
 			self updateClassInfoFrom: sparkleService ] ].
 	categories whenSelectionChangedDo: [ :selection | 
 		self
@@ -126,7 +99,7 @@ SpkPlayBrowserPresenter >> connectPresenters [
 			shouldRetainSelections: false ].
 	methods whenSelectionChangedDo: [ :selection | 
 		selection selectedItem ifNotNil: [ :sparkleService | 
-			lowerTabs selectPageIndex: 2. "need to be more explicit here. select method page" 
+			lowerTabs selectPageIndex: 2. "need to be intention revealing. select method page" 
 			self getSourceForMethod: sparkleService ] ].
 	self connectMetaRadioButtons
 ]
@@ -137,16 +110,69 @@ SpkPlayBrowserPresenter >> ensureUniqueClassServicesfor: packageService [
 	"If we have a class sparkle service in another class already
 	with the appropriate meta, use it instead"
 
-	| allOtherClassServices uniqueClassServices |
-	allOtherClassServices := self allClassServices.
-	uniqueClassServices := (packageService blobPropertyNamed: #classes) 
-		                       collect: [ :classService | 
-			                       allOtherClassServices
-				                       detect: [ :other | 
-					                       other oop = classService oop and: [ 
-						                       classService meta = other meta ] ]
-				                       ifNone: [ classService ] ].
-	^ uniqueClassServices
+	| existingClassServices classServices |
+	existingClassServices := self existingClassServices.
+	classServices := packageService blobPropertyNamed: #classes.
+	classServices do: [ :classService | 
+		| existingServices |
+		existingServices := existingClassServices select: [ :other | 
+			                    other oop = classService oop and: [ 
+				                    classService meta = other meta ] ].
+		existingServices do: [ :existing | 
+			existing becomeForward: classService ] ].
+
+	^ classServices
+]
+
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> ensureUniqueMethodServiceFor: methodService [
+
+	| existingServices |
+	existingServices := self existingMethodServices select: [ :other | 
+		                    other oop = methodService oop and: [ 
+			                    methodService meta = other meta ] ].
+	existingServices do: [ :existing | 
+		existing becomeForward: methodService ].
+	^ methodService announcer
+		  when: SpkMethodChangedAnnouncement
+		  send: #updateMethodSourceFromAnnouncement:
+		  to: self
+]
+
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> ensureUniqueMethodServicesfor: classService [
+
+	"If we have a class sparkle service in another class already
+	with the appropriate meta, use it instead"
+
+	| methodServices |
+	methodServices := classService blobPropertyNamed: #methods.
+	methodServices do: [ :methodService | 
+		self ensureUniqueMethodServiceFor: methodService ].
+
+	^ methodServices
+]
+
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> existingClassServices [
+
+	| otherBrowsers allClassServices |
+	otherBrowsers := self class allInstances.
+	allClassServices := OrderedCollection new.
+	otherBrowsers do: [ :otherBrowser | 
+		allClassServices addAll: otherBrowser classes ].
+	^ allClassServices
+]
+
+{ #category : 'list management' }
+SpkPlayBrowserPresenter >> existingMethodServices [
+
+	| otherBrowsers allMethodServices |
+	otherBrowsers := self class allInstances.
+	allMethodServices := OrderedCollection new.
+	otherBrowsers do: [ :otherBrowser | 
+		allMethodServices addAll: otherBrowser methods ].
+	^ allMethodServices
 ]
 
 { #category : 'list management' }
@@ -180,7 +206,7 @@ SpkPlayBrowserPresenter >> getClassesForPackage: packageSparkleService [
 		                  sparkleService rowanServiceClassName
 		                  = #RowanPackageService ].
 
-	classServices := self ensureUniqueClassServicesfor: packageService.
+	classServices := packageService blobPropertyNamed: #classes.
 	classes
 		items: classServices;
 		sortingBlock: [ :a :b | 
@@ -252,7 +278,7 @@ SpkPlayBrowserPresenter >> getSourceForMethod: methodSparkleService [
 		remotePerformOnService: methodSparkleService
 		selector: #update
 		arguments: #(  ).
-	self updateMethodSourceFrom: methodSparkleService
+	self updateMethodSourceFrom: methodSparkleService.
 ]
 
 { #category : 'initialization' }
@@ -260,7 +286,7 @@ SpkPlayBrowserPresenter >> initialize [
 	super initialize.
 	rsrService := SpkRowanServiceClient new registerWith:
 		           SpkLauncherPresenter connection.
-	self initializeProjects 
+	self initializeProjects.
 ]
 
 { #category : 'initialization' }
@@ -389,6 +415,12 @@ SpkPlayBrowserPresenter >> labelHeight [
 	^20
 ]
 
+{ #category : 'accessing' }
+SpkPlayBrowserPresenter >> methods [
+
+	^ methods items
+]
+
 { #category : 'list management' }
 SpkPlayBrowserPresenter >> methodsInSelectedCategory: methodServices [
 
@@ -449,13 +481,17 @@ SpkPlayBrowserPresenter >> saveMethod: classSparkleService category: category [
 		                 sparkleService rowanServiceClassName
 		                 = #RowanMethodService ].
 	self updateMethodSourceFrom: methodService.
+	(self methods detect:[:ea | (ea blobPropertyNamed: #selector) = (methodService blobPropertyNamed: #selector)] ifNone:[])
+	 ifNil:[
 	methods
 		items: methods items , (Array with: methodService);
 		sortingBlock: [ :a :b | 
-			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ].
+			(a blobPropertyNamed: #selector) < (b blobPropertyNamed: #selector) ]].
+	
 	methods selectItem: methodService.
 	methods verticalAlignment desiredVisibleRow:
-		(methods items size min: (methods items indexOf: methodService))
+		(methods items size min: (methods items indexOf: methodService)).
+	methodService announcer announce: SpkMethodChangedAnnouncement new. 
 ]
 
 { #category : 'private-actions' }
@@ -469,9 +505,20 @@ SpkPlayBrowserPresenter >> updateClassInfoFrom: sparkleService [
 
 { #category : 'updates' }
 SpkPlayBrowserPresenter >> updateMethodSourceFrom: methodSparkleService [
-
-	methods selection selectedItem == methodSparkleService ifTrue: [ 
+	methods selection selectedItem ifNil:[^self]. 
+	(methods selection selectedItem blobPropertyNamed: #selector) == (methodSparkleService blobPropertyNamed: #selector) ifTrue: [ 
 		source text: (methodSparkleService blobPropertyNamed: #source) ]
+]
+
+{ #category : 'updates' }
+SpkPlayBrowserPresenter >> updateMethodSourceFromAnnouncement: methodSparkleServiceAnnouncement [
+ methodSparkleServiceAnnouncement methodSparkleService ifNil:[^self]. 
+	(methods selection selectedItem blobPropertyNamed: #selector)
+	== (methodSparkleServiceAnnouncement methodSparkleService 
+			 blobPropertyNamed: #selector) ifTrue: [ 
+		source text:
+			(methodSparkleServiceAnnouncement methodSparkleService 
+				 blobPropertyNamed: #source) ]
 ]
 
 { #category : 'initialization' }
